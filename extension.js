@@ -5,7 +5,6 @@ const Main = imports.ui.main;
 const SessionMode = imports.ui.sessionMode;
 
 const CLOCK_CENTER = 0;
-const CLOCK_LEFT = 1;
 const CLOCK_RIGHT = 2;
 
 let indicatorPad = null;
@@ -31,12 +30,9 @@ function clock_alignment(alignment) {
     const banner_offset = Main.layoutManager.monitors[0].width - banner_width;
     let clock_padding = false;
     Main.messageTray._bannerBin.width = banner_width;
-    if (alignment == CLOCK_LEFT) {
-        Main.panel._leftBox.insert_child_at_index(container, 0);
-        Main.messageTray._bannerBin.x = -banner_offset*(1.5);
-    } else if (alignment == CLOCK_RIGHT) {
+    if (alignment == CLOCK_RIGHT) {
         Main.panel._rightBox.add_actor(container);
-        Main.messageTray._bannerBin.x = banner_offset*(1.5);
+        Main.messageTray._bannerBin.x = banner_offset*(0.88);
     } else {
         Main.panel._centerBox.add_actor(container);
         Main.messageTray._bannerBin.x = 0;
