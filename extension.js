@@ -31,26 +31,14 @@ function clock_alignment(alignment) {
     let clock_padding = false;
     Main.messageTray._bannerBin.width = banner_width;
     if (alignment == CLOCK_RIGHT) {
-        Main.panel._rightBox.add_actor(container);
+        children = Main.panel._rightBox.get_children();
+        Main.panel._rightBox.insert_child_at_index(dateMenu.container, children.length-1);
         Main.messageTray._bannerBin.x = banner_offset*(0.88);
+        clock_padding = false;
     } else {
         Main.panel._centerBox.add_actor(container);
         Main.messageTray._bannerBin.x = 0;
         clock_padding = true;
-    }
-
-    const dateMenuBox = dateMenu.get_child_at_index(0);
-    if (indicatorPad == null) {
-        indicatorPad = dateMenuBox.get_child_at_index(0);
-    }
-    if (clock_padding) {
-        if (indicatorPad.get_parent() == null) {
-            dateMenuBox.insert_child_at_index(indicatorPad, 0);
-        }
-    } else {
-        if (indicatorPad.get_parent() != null) {
-            dateMenuBox.remove_child(indicatorPad);
-        }
     }
 }
 
