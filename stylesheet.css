@@ -1,3 +1,11 @@
-.panel-status-menu-box>StIcon { 
-    icons-size: 16px; padding: 4px;
+#panel.top-bar--normal {
+    transition-duration: 200ms;
+}
+#panel.top-bar--solid-dark {
+    background-color: rgba(0, 0, 0, 1);
+    transition-duration: 200ms;
+}
+#panel.top-bar--solid-light {
+    background-color: rgba(255, 255, 255, 1);
+    transition-duration: 200ms;
 }

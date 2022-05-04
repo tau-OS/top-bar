@@ -3,6 +3,7 @@
 
 const Main = imports.ui.main;
 const SessionMode = imports.ui.sessionMode;
+const { Gio, GLib, Meta, St } = imports.gi;
 
 const CLOCK_CENTER = 0;
 const CLOCK_RIGHT = 2;
@@ -43,6 +44,8 @@ function clock_alignment(alignment) {
 }
 
 function init() {
+    this._actorSignalIds = null;
+    this._windowSignalIds = null;
 }
 
 function enable() {
@@ -64,6 +67,39 @@ function enable() {
     if ( children.indexOf(dateMenu.container) != -1 ) {
         clock_alignment(CLOCK_RIGHT);
     }
+    
+    this._actorSignalIds = new Map();
+    this._windowSignalIds = new Map();
+
+    this._actorSignalIds.set(Main.overview, [
+        Main.overview.connect('showing', this._updateTransparent.bind(this)),
+        Main.overview.connect('hiding', this._updateTransparent.bind(this))
+    ]);
+
+    this._actorSignalIds.set(Main.sessionMode, [
+        Main.sessionMode.connect('updated', this._updateTransparent.bind(this))
+    ]);
+
+    for (const metaWindowActor of global.get_window_actors()) {
+        this._onWindowActorAdded(metaWindowActor.get_parent(), metaWindowActor);
+    }
+
+    this._actorSignalIds.set(global.window_group, [
+        global.window_group.connect('actor-added', this._onWindowActorAdded.bind(this)),
+        global.window_group.connect('actor-removed', this._onWindowActorRemoved.bind(this))
+    ]);
+
+    this._actorSignalIds.set(global.window_manager, [
+        global.window_manager.connect('switch-workspace', this._updateTransparent.bind(this))
+    ]);
+
+    this._updateTransparent();
+    
+    const SHELL_THEME_SCHEMA = 'org.gnome.shell.extensions.user-theme';
+    let settings = new Gio.Settings({ schema_id: SHELL_THEME_SCHEMA });
+    settings.connect("changed::name", () => {
+        this._updateTransparent();
+    });
 }
 
 function disable() {
@@ -84,5 +120,93 @@ function disable() {
     // only move the clock back if it's in the right box
     if ( children.indexOf(dateMenu.container) != -1 ) {
         clock_alignment(CLOCK_CENTER);
+    }
+    
+    for (const actorSignalIds of [this._actorSignalIds, this._windowSignalIds]) {
+        for (const [actor, signalIds] of actorSignalIds) {
+            for (const signalId of signalIds) {
+                actor.disconnect(signalId);
+            }
+        }
+    }
+    this._actorSignalIds = null;
+    this._windowSignalIds = null;
+
+    Main.panel.remove_style_class_name('top-bar--solid');
+    Main.panel.remove_style_class_name('top-bar--transparent-light');
+    Main.panel.remove_style_class_name('top-bar--transparent-dark');
+}
+
+function _onWindowActorAdded(container, metaWindowActor) {
+    this._windowSignalIds.set(metaWindowActor, [
+        metaWindowActor.connect('notify::allocation', this._updateTransparent.bind(this)),
+        metaWindowActor.connect('notify::visible', this._updateTransparent.bind(this))
+    ]);
+}
+
+function _onWindowActorRemoved(container, metaWindowActor) {
+    for (const signalId of this._windowSignalIds.get(metaWindowActor)) {
+        metaWindowActor.disconnect(signalId);
+    }
+    this._windowSignalIds.delete(metaWindowActor);
+    this._updateTransparent();
+}
+
+function _updateTransparent() {
+    if (Main.panel.has_style_pseudo_class('overview') || !Main.sessionMode.hasWindows) {
+        this._setTransparent(true);
+        return;
+    }
+
+    if (!Main.layoutManager.primaryMonitor) {
+        return;
+    }
+
+    // Get all the windows in the active workspace that are in the primary monitor and visible.
+    const workspaceManager = global.workspace_manager;
+    const activeWorkspace = workspaceManager.get_active_workspace();
+    const windows = activeWorkspace.list_windows().filter(metaWindow => {
+        return metaWindow.is_on_primary_monitor()
+                && metaWindow.showing_on_its_workspace()
+                && !metaWindow.is_hidden()
+                && metaWindow.get_window_type() !== Meta.WindowType.DESKTOP;
+    });
+
+    // Check if at least one window is near enough to the panel.
+    const panelTop = Main.panel.get_transformed_position()[1];
+    const panelBottom = panelTop + Main.panel.get_height();
+    const scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
+    const isNearEnough = windows.some(metaWindow => {
+        const verticalPosition = metaWindow.get_frame_rect().y;
+        return verticalPosition < panelBottom + 5 * scale;
+    });
+
+    this._setTransparent(isNearEnough);
+}
+
+function _setTransparent(transparent) {
+    const SHELL_THEME_SCHEMA = 'org.gnome.shell.extensions.user-theme';
+    let settings = new Gio.Settings({ schema_id: SHELL_THEME_SCHEMA });
+    
+    if (GLib.str_has_suffix(settings.get_string("name"), "-dark")) {
+        if (transparent) {
+            Main.panel.remove_style_class_name('top-bar--normal');
+            Main.panel.remove_style_class_name('top-bar--solid-light');
+            Main.panel.add_style_class_name('top-bar--solid-dark');
+        } else {
+            Main.panel.add_style_class_name('top-bar--normal');
+            Main.panel.remove_style_class_name('top-bar--solid-light');
+            Main.panel.remove_style_class_name('top-bar--solid-dark');
+        }
+    } else {
+        if (transparent) {
+            Main.panel.remove_style_class_name('top-bar--normal');
+            Main.panel.add_style_class_name('top-bar--solid-light');
+            Main.panel.remove_style_class_name('top-bar--solid-dark');
+        } else {
+            Main.panel.add_style_class_name('top-bar--normal');
+            Main.panel.remove_style_class_name('top-bar--solid-light');
+            Main.panel.remove_style_class_name('top-bar--solid-dark');
+        }
     }
 }
