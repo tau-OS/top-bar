@@ -7,7 +7,6 @@ project(
 
 app_id = 'top-bar@tauos.co'
 
-sassc = find_program('sassc')
 gnome = import('gnome')
 i18n = import('i18n')
 
