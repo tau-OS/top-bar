@@ -1,7 +1,7 @@
-%global extdir %{_datadir}/gnome-shell/extensions/dash-to-dock@tauos.co
+%global extdir %{_datadir}/gnome-shell/extensions/top-bar@tauos.co
 
 Summary:        Adjust Top Bar for tauOS
-Name:           top-bar
+Name:           tau-top-bar
 # This should match the version in metadata.json
 Version:        1
 Release:        1
@@ -9,9 +9,7 @@ License:        GPLv3+
 URL:            http://tauos.co
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
-BuildRequires:  gettext
 BuildRequires:  meson
-BuildRequires:  sassc
 BuildRequires:  %{_bindir}/glib-compile-schemas
 
 Requires:       gnome-shell-extension-common
@@ -31,10 +29,7 @@ the bar intelligent about its surroundings and becoming opaque if needed.
 %meson_install
 
 # Cleanup crap.
-%{__rm} -fr %{buildroot}%{extdir}/{COPYING*,README*,locale,schemas}
-
-# Create manifest for i18n.
-%find_lang %{name} --all-name
+%{__rm} -fr %{buildroot}%{extdir}/{COPYING*,README*}
 
 %check
 %meson_test
@@ -45,5 +40,8 @@ the bar intelligent about its surroundings and becoming opaque if needed.
 %{extdir}
 
 %changelog
+* Thu May 12 2022 Jamie Murphy <jamie@fyralabs.com> - 1-1
+- Add metadata
+
 * Thu May 5 2022 Lains <lainsce@airmail.cc> - 1-1
 - Initial Release
