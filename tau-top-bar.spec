@@ -4,7 +4,7 @@ Summary:        Adjust Top Bar for tauOS
 Name:           tau-top-bar
 # This should match the version in metadata.json
 Version:        1
-Release:        1
+Release:        1.1
 License:        GPLv3+
 URL:            http://tauos.co
 Source0:        %{name}-%{version}.tar.gz
@@ -40,6 +40,9 @@ the bar intelligent about its surroundings and becoming opaque if needed.
 %{extdir}
 
 %changelog
+* Fri May 13 2022 Jamie Murphy <jamie@fyralabs.com> - 1-1.1
+- Disable banner adjustments if notification manager is present
+
 * Thu May 12 2022 Jamie Murphy <jamie@fyralabs.com> - 1-1
 - Add metadata
 
