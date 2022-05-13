@@ -34,7 +34,7 @@ the bar intelligent about its surroundings and becoming opaque if needed.
 %check
 %meson_test
 
-%files -f %{name}.lang
+%files
 %license COPYING
 %doc README.md
 %{extdir}
