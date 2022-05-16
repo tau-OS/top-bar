@@ -132,7 +132,7 @@ class ActivitiesIconButton extends PanelMenu.Button {
     }
 });
 
-_setLabel() {
+function _setLabel() {
     this._activitiesIconButton._iconBin.hide();
     this._activitiesIconButton.label = "Workspaces";
     this._activitiesIconButton._textBin.show();
@@ -231,7 +231,7 @@ function disable() {
   
   this._activitiesIconButton.destroy();
   this._activitiesIconButton = null;
-  if(Main.sessionMode.currentMode == 'unlock-dialog') {
+  if (Main.sessionMode.currentMode == 'unlock-dialog') {
     Main.panel.statusArea.activities.container.hide();
   } else {
     Main.panel.statusArea.activities.container.show();
