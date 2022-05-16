@@ -18,9 +18,21 @@ const SessionMode = imports.ui.sessionMode;
 const { Gio, GLib, Meta, St, GObject, Shell, Atk, Clutter } = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
 const ExtensionUtils = imports.misc.extensionUtils;
+const Overview = imports.ui.overview;
 
 const CLOCK_CENTER = 0;
 const CLOCK_RIGHT = 2;
+
+let injections = [];
+
+function inject(object, parameter, replacement) {
+    injections.push({
+        "object": object,
+        "parameter": parameter,
+        "value": object[parameter]
+    });
+    object[parameter] = replacement;
+}
 
 let indicatorPad = null;
 let handleBanner = false;
@@ -118,6 +130,25 @@ class ActivitiesIconButton extends PanelMenu.Button {
     get label() {
         return (this._label.get_text());
     }
+    
+    vfunc_captured_event(event) {
+        if (event.type() == Clutter.EventType.BUTTON_PRESS ||
+            event.type() == Clutter.EventType.TOUCH_BEGIN) {
+            if (!Main.overview.shouldToggleByCornerOrButton())
+                return Clutter.EVENT_STOP;
+        }
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    vfunc_event(event) {
+        if (event.type() == Clutter.EventType.TOUCH_END ||
+            event.type() == Clutter.EventType.BUTTON_RELEASE) {
+            if (Main.overview.shouldToggleByCornerOrButton())
+                this.toggle();
+        }
+
+        return Clutter.EVENT_PROPAGATE;
+    }
 
     vfunc_key_release_event(keyEvent) {
         let symbol = keyEvent.keyval;
@@ -140,10 +171,38 @@ function _setLabel() {
 }
 
 function enable() {
-  Main.panel.statusArea.activities.container.hide();
-  this._activitiesIconButton = new ActivitiesIconButton();
-  this._setLabel();
-  Main.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
+    Main.panel.statusArea.activities.container.hide();
+    this._activitiesIconButton = new ActivitiesIconButton();
+    this._setLabel();
+    Main.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
+  
+    const overview_show = Main.overview.show;
+    inject(Main.overview, 'show', function() {
+        overview_show.call(this);
+        applications.hide();
+    });
+
+    const overview_hide = Main.overview.hide;
+    inject(Main.overview, 'hide', function() {
+        overview_hide.call(this);
+        applications.hide();
+    });
+
+    // Catalogue details
+    inject(AppMenu.prototype, "_updateDetailsVisibility", function () {
+        this._detailsItem.visible = false;
+
+        const sw = this._appSystem.lookup_app('co.tauos.catalogue.desktop');
+        if (sw !== null) {
+            this._detailsItem = this.addAction(_('Show Details'), async () => {
+                const id = this._app.get_id();
+                Util.trySpawn(["co.tauos.catalogue", "appstream://" + id]);
+                Main.overview.hide();
+            });
+        }
+    });
+    
+    Main.overview.searchEntry.hide();
 
   // do nothing if the clock isn't centered in this mode
   if (Main.sessionMode.panel.center.indexOf("dateMenu") == -1) {
@@ -240,6 +299,14 @@ function disable() {
   Main.panel.remove_style_class_name("top-bar--solid");
   Main.panel.remove_style_class_name("top-bar--transparent-light");
   Main.panel.remove_style_class_name("top-bar--transparent-dark");
+  
+  Main.overview.searchEntry.show();
+  
+    let i;
+    for(i in injections) {
+       let injection = injections[i];
+       injection["object"][injection["parameter"]] = injection["value"];
+    }
 }
 
 function _onWindowActorAdded(container, metaWindowActor) {
