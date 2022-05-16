@@ -22,7 +22,6 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Overview = imports.ui.overview;
 const extension = ExtensionUtils.getCurrentExtension();
 const OverviewControls = imports.ui.overviewControls;
-var applications = extension.imports.applications;
 var OVERVIEW_WORKSPACES = 0;
 var OVERVIEW_APPLICATIONS = 1;
 var OVERVIEW_LAUNCHER = 2;
@@ -34,8 +33,6 @@ function overview_visible(kind) {
                 return true;
             }
         }
-    } else if (kind == OVERVIEW_APPLICATIONS) {
-        return applications.visible();
     } else {
         if (Main.overview.visibleTarget) {
             return true;
@@ -51,19 +48,13 @@ function overview_show(kind) {
         } else {
             Main.overview.show(OverviewControls.ControlsState.WINDOW_PICKER);
         }
-    } else if (kind == OVERVIEW_APPLICATIONS) {
-        applications.show();
     } else {
         Main.overview.show();
     }
 }
 
 function overview_hide(kind) {
-    if (kind == OVERVIEW_APPLICATIONS) {
-        applications.hide();
-    } else {
-        Main.overview.hide();
-    }
+    Main.overview.hide();
 }
 
 function overview_toggle(kind) {
@@ -290,6 +281,9 @@ function disable() {
   if (Main.sessionMode.panel.center.indexOf("dateMenu") == -1) {
     return;
   }
+  
+  Main.panel.statusArea.activities.container.show();
+  this._activitiesIconButton = null;
 
   let rightBox = Main.panel._rightBox;
   let dateMenu = Main.panel.statusArea["dateMenu"];
