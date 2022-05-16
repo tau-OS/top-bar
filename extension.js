@@ -15,7 +15,9 @@
 
 const Main = imports.ui.main;
 const SessionMode = imports.ui.sessionMode;
-const { Gio, GLib, Meta, St } = imports.gi;
+const { Gio, GLib, Meta, St, GObject, Shell, Atk, Clutter } = imports.gi;
+const PanelMenu = imports.ui.panelMenu;
+const ExtensionUtils = imports.misc.extensionUtils;
 
 const CLOCK_CENTER = 0;
 const CLOCK_RIGHT = 2;
@@ -79,7 +81,70 @@ function init() {
   this._windowSignalIds = null;
 }
 
+var ActivitiesIconButton = GObject.registerClass(
+class ActivitiesIconButton extends PanelMenu.Button {
+    _init() {
+        super._init(0.0, null, true);
+        this.container.name = 'panelActivitiesIconButtonContainer';
+        this.accessible_role = Atk.Role.TOGGLE_BUTTON;
+        this.name = 'panelActivitiesIconButton';
+        this._iconLabelBox = new St.BoxLayout({style_class: 'space'});
+        this._iconBin = new St.Bin();
+        this._textBin = new St.Bin();
+        this._iconLabelBox.add(this._iconBin);
+        this._label = new St.Label({ text: "", y_align:Clutter.ActorAlign.CENTER });
+        this._textBin.child = this._label;
+        this._iconLabelBox.add(this._textBin);
+        this.add_actor(this._iconLabelBox);
+        this.label_actor = this._label;
+        
+        this._overviewShowingSig = 0;
+        this._overviewHidingSig = 0;
+
+        this._overviewShowingSig = Main.overview.connect('showing', () => {
+            this.add_style_pseudo_class('overview');
+            this.add_accessible_state(Atk.StateType.CHECKED);
+        });
+        this._overviewHidingSig = Main.overview.connect('hiding', () => {
+            this.remove_style_pseudo_class('overview');
+            this.remove_accessible_state(Atk.StateType.CHECKED);
+        });
+    }
+
+    set label(labelText) {
+        this._label.set_text(labelText);
+    }
+
+    get label() {
+        return (this._label.get_text());
+    }
+
+    vfunc_key_release_event(keyEvent) {
+        let symbol = keyEvent.keyval;
+        if (symbol == Clutter.KEY_Return || symbol == Clutter.KEY_space) {
+            if (Main.overview.shouldToggleByCornerOrButton()) {
+                Main.overview.toggle();
+                return Clutter.EVENT_STOP;
+            }
+        }
+
+        return Clutter.EVENT_PROPAGATE;
+    }
+});
+
+_setLabel() {
+    this._activitiesIconButton._iconBin.hide();
+    this._activitiesIconButton.label = "Workspaces";
+    this._activitiesIconButton._textBin.show();
+    this._activitiesIconButton.show();
+}
+
 function enable() {
+  Main.panel.statusArea.activities.container.hide();
+  this._activitiesIconButton = new ActivitiesIconButton();
+  this._setLabel();
+  Main.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
+
   // do nothing if the clock isn't centered in this mode
   if (Main.sessionMode.panel.center.indexOf("dateMenu") == -1) {
     return;
@@ -89,8 +154,6 @@ function enable() {
   let dateMenu = Main.panel.statusArea["dateMenu"];
   let appMenu = Main.panel.statusArea["appMenu"];
   let children = centerBox.get_children();
-
-  appMenu.container.hide();
 
   // only move the clock if it's in the center box
   if (children.indexOf(dateMenu.container) != -1) {
@@ -151,8 +214,6 @@ function disable() {
   let appMenu = Main.panel.statusArea["appMenu"];
   let children = rightBox.get_children();
 
-  appMenu.container.show();
-
   // only move the clock back if it's in the right box
   if (children.indexOf(dateMenu.container) != -1) {
     clock_alignment(CLOCK_CENTER);
@@ -167,6 +228,14 @@ function disable() {
   }
   this._actorSignalIds = null;
   this._windowSignalIds = null;
+  
+  this._activitiesIconButton.destroy();
+  this._activitiesIconButton = null;
+  if(Main.sessionMode.currentMode == 'unlock-dialog') {
+    Main.panel.statusArea.activities.container.hide();
+  } else {
+    Main.panel.statusArea.activities.container.show();
+  }
 
   Main.panel.remove_style_class_name("top-bar--solid");
   Main.panel.remove_style_class_name("top-bar--transparent-light");
