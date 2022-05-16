@@ -17,8 +17,64 @@ const Main = imports.ui.main;
 const SessionMode = imports.ui.sessionMode;
 const { Gio, GLib, Meta, St, GObject, Shell, Atk, Clutter } = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
+const { AppMenu } = imports.ui.appMenu;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Overview = imports.ui.overview;
+const extension = ExtensionUtils.getCurrentExtension();
+const OverviewControls = imports.ui.overviewControls;
+var applications = extension.imports.applications;
+var OVERVIEW_WORKSPACES = 0;
+var OVERVIEW_APPLICATIONS = 1;
+var OVERVIEW_LAUNCHER = 2;
+
+function overview_visible(kind) {
+    if (kind == OVERVIEW_WORKSPACES) {
+        if (Main.overview.visibleTarget) {
+            if (!Main.overview.dash.showAppsButton.checked) {
+                return true;
+            }
+        }
+    } else if (kind == OVERVIEW_APPLICATIONS) {
+        return applications.visible();
+    } else {
+        if (Main.overview.visibleTarget) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function overview_show(kind) {
+    if (kind == OVERVIEW_WORKSPACES) {
+        if (Main.overview.visible) {
+            Main.overview.dash.showAppsButton.checked = false;
+        } else {
+            Main.overview.show(OverviewControls.ControlsState.WINDOW_PICKER);
+        }
+    } else if (kind == OVERVIEW_APPLICATIONS) {
+        applications.show();
+    } else {
+        Main.overview.show();
+    }
+}
+
+function overview_hide(kind) {
+    if (kind == OVERVIEW_APPLICATIONS) {
+        applications.hide();
+    } else {
+        Main.overview.hide();
+    }
+}
+
+function overview_toggle(kind) {
+    if (Main.overview.animationInProgress) {
+        // prevent accidental re-show
+    } else if (overview_visible(kind)) {
+        overview_hide(kind);
+    } else {
+        overview_show(kind);
+    }
+}
 
 const CLOCK_CENTER = 0;
 const CLOCK_RIGHT = 2;
@@ -130,37 +186,6 @@ class ActivitiesIconButton extends PanelMenu.Button {
     get label() {
         return (this._label.get_text());
     }
-    
-    vfunc_captured_event(event) {
-        if (event.type() == Clutter.EventType.BUTTON_PRESS ||
-            event.type() == Clutter.EventType.TOUCH_BEGIN) {
-            if (!Main.overview.shouldToggleByCornerOrButton())
-                return Clutter.EVENT_STOP;
-        }
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    vfunc_event(event) {
-        if (event.type() == Clutter.EventType.TOUCH_END ||
-            event.type() == Clutter.EventType.BUTTON_RELEASE) {
-            if (Main.overview.shouldToggleByCornerOrButton())
-                this.toggle();
-        }
-
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    vfunc_key_release_event(keyEvent) {
-        let symbol = keyEvent.keyval;
-        if (symbol == Clutter.KEY_Return || symbol == Clutter.KEY_space) {
-            if (Main.overview.shouldToggleByCornerOrButton()) {
-                Main.overview.toggle();
-                return Clutter.EVENT_STOP;
-            }
-        }
-
-        return Clutter.EVENT_PROPAGATE;
-    }
 });
 
 function _setLabel() {
@@ -179,13 +204,11 @@ function enable() {
     const overview_show = Main.overview.show;
     inject(Main.overview, 'show', function() {
         overview_show.call(this);
-        applications.hide();
     });
 
     const overview_hide = Main.overview.hide;
     inject(Main.overview, 'hide', function() {
         overview_hide.call(this);
-        applications.hide();
     });
 
     // Catalogue details
