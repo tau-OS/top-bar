@@ -130,8 +130,7 @@ class ActivitiesButton extends PanelMenu.Button {
         let symbol = keyEvent.keyval;
         if (symbol == Clutter.KEY_Return || symbol == Clutter.KEY_space) {
             if (Main.overview.shouldToggleByCornerOrButton()) {
-                Main.overview.toggle();.overview.searchEntry.show();
-                }
+                Main.overview.toggle();
                 return Clutter.EVENT_STOP;
             }
         }
