@@ -29,9 +29,7 @@ var OVERVIEW_LAUNCHER = 2;
 function overview_visible(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
         if (Main.overview.visibleTarget) {
-            if (!Main.overview.dash.showAppsButton.checked) {
-                return true;
-            }
+            return false;
         }
     } else {
         if (Main.overview.visibleTarget) {
@@ -43,9 +41,7 @@ function overview_visible(kind) {
 
 function overview_show(kind) {
     if (kind == OVERVIEW_WORKSPACES) {
-        if (Main.overview.visible) {
-            Main.overview.dash.showAppsButton.checked = false;
-        } else {
+        if (!Main.overview.visible) {
             Main.overview.show(OverviewControls.ControlsState.WINDOW_PICKER);
         }
     } else {
@@ -187,10 +183,10 @@ function _setLabel() {
 }
 
 function enable() {
-    Main.panel.statusArea.activities.container.hide();
+    Main.sessionMode.panel.statusArea.activities.container.hide();
     this._activitiesIconButton = new ActivitiesIconButton();
     this._setLabel();
-    Main.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
+    Main.sessionMode.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
   
     const overview_show = Main.overview.show;
     inject(Main.overview, 'show', function() {
@@ -282,8 +278,13 @@ function disable() {
     return;
   }
   
-  Main.panel.statusArea.activities.container.show();
+  this._activitiesIconButton.destroy();
   this._activitiesIconButton = null;
+  if (Main.sessionMode.currentMode == 'unlock-dialog') {
+    Main.panel.statusArea.activities.container.hide(); 
+  } else {
+    Main.panel.statusArea.activities.container.show();
+  }
 
   let rightBox = Main.panel._rightBox;
   let dateMenu = Main.panel.statusArea["dateMenu"];
@@ -319,11 +320,11 @@ function disable() {
   
   Main.overview.searchEntry.show();
   
-    let i;
-    for(i in injections) {
-       let injection = injections[i];
-       injection["object"][injection["parameter"]] = injection["value"];
-    }
+  let i;
+  for(i in injections) {
+     let injection = injections[i];
+     injection["object"][injection["parameter"]] = injection["value"];
+  }
 }
 
 function _onWindowActorAdded(container, metaWindowActor) {

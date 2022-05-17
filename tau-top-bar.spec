@@ -4,7 +4,7 @@ Summary:        Adjust Top Bar for tauOS
 Name:           tau-top-bar
 # This should match the version in metadata.json
 Version:        1
-Release:        1.2.4
+Release:        1.2.5
 License:        GPLv3+
 URL:            http://tauos.co
 Source0:        %{name}-%{version}.tar.gz
@@ -40,6 +40,9 @@ the bar intelligent about its surroundings and becoming opaque if needed.
 %{extdir}
 
 %changelog
+* Mon May 16 2022 Lains <lainsce@airmail.cc> - 1-1.2.5
+- Perhaps fixed things??
+
 * Mon May 16 2022 Lains <lainsce@airmail.cc> - 1-1.2.4
 - More GJS moment of cringe
 
