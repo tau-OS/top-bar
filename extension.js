@@ -22,46 +22,6 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Overview = imports.ui.overview;
 const extension = ExtensionUtils.getCurrentExtension();
 const OverviewControls = imports.ui.overviewControls;
-var OVERVIEW_WORKSPACES = 0;
-var OVERVIEW_APPLICATIONS = 1;
-var OVERVIEW_LAUNCHER = 2;
-
-function overview_visible(kind) {
-    if (kind == OVERVIEW_WORKSPACES) {
-        if (Main.overview.visibleTarget) {
-            return false;
-        }
-    } else {
-        if (Main.overview.visibleTarget) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function overview_show(kind) {
-    if (kind == OVERVIEW_WORKSPACES) {
-        if (!Main.overview.visible) {
-            Main.overview.show(OverviewControls.ControlsState.WINDOW_PICKER);
-        }
-    } else {
-        Main.overview.show();
-    }
-}
-
-function overview_hide(kind) {
-    Main.overview.hide();
-}
-
-function overview_toggle(kind) {
-    if (Main.overview.animationInProgress) {
-        // prevent accidental re-show
-    } else if (overview_visible(kind)) {
-        overview_hide(kind);
-    } else {
-        overview_show(kind);
-    }
-}
 
 const CLOCK_CENTER = 0;
 const CLOCK_RIGHT = 2;
@@ -204,20 +164,15 @@ function _setLabel() {
 }
 
 function enable() {
-    Main.sessionMode.panel.statusArea.activities.container.hide();
+    Main.panel.statusArea.activities.container.hide();
     this._activitiesIconButton = new ActivitiesIconButton();
     this._setLabel();
-    Main.sessionMode.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
-  
-    const overview_show = Main.overview.show;
-    inject(Main.overview, 'show', function() {
-        overview_show.call(this);
-    });
-
-    const overview_hide = Main.overview.hide;
-    inject(Main.overview, 'hide', function() {
-        overview_hide.call(this);
-    });
+    if(Main.sessionMode.currentMode != 'unlock-dialog') {
+        Main.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
+    }
+    
+    Main.overview.dash.hide();
+    Main.overview.dash.height = 0;
 
     // Catalogue details
     inject(AppMenu.prototype, "_updateDetailsVisibility", function () {
@@ -300,7 +255,6 @@ function disable() {
   }
   
   this._activitiesIconButton.destroy();
-  this._activitiesIconButton = null;
   if (Main.sessionMode.currentMode == 'unlock-dialog') {
     Main.panel.statusArea.activities.container.hide(); 
   } else {
@@ -328,7 +282,6 @@ function disable() {
   this._windowSignalIds = null;
   
   this._activitiesIconButton.destroy();
-  this._activitiesIconButton = null;
   if (Main.sessionMode.currentMode == 'unlock-dialog') {
     Main.panel.statusArea.activities.container.hide();
   } else {
@@ -340,12 +293,6 @@ function disable() {
   Main.panel.remove_style_class_name("top-bar--transparent-dark");
   
   Main.overview.searchEntry.show();
-  
-  let i;
-  for(i in injections) {
-     let injection = injections[i];
-     injection["object"][injection["parameter"]] = injection["value"];
-  }
 }
 
 function _onWindowActorAdded(container, metaWindowActor) {
