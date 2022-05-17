@@ -167,8 +167,12 @@ function enable() {
     Main.panel.statusArea.activities.container.hide();
     this._activitiesIconButton = new ActivitiesIconButton();
     this._setLabel();
-    if(Main.sessionMode.currentMode != 'unlock-dialog') {
-        Main.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
+    Main.panel.addToStatusArea('activities-icon-button', this._activitiesIconButton, 0, 'left');
+
+    if (Main.sessionMode.currentMode == 'unlock-dialog') {
+      this._activitiesIconButton.hide(); 
+    } else {
+      this._activitiesIconButton.show();
     }
     
     Main.overview.dash.hide();
@@ -255,6 +259,7 @@ function disable() {
   }
   
   this._activitiesIconButton.destroy();
+  this._activitiesIconButton = null;
   if (Main.sessionMode.currentMode == 'unlock-dialog') {
     Main.panel.statusArea.activities.container.hide(); 
   } else {
