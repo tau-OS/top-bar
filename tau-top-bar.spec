@@ -4,7 +4,7 @@ Summary:        Adjust Top Bar for tauOS
 Name:           tau-top-bar
 # This should match the version in metadata.json
 Version:        1
-Release:        1.2.7
+Release:        1.2.8
 License:        GPLv3+
 URL:            http://tauos.co
 Source0:        %{name}-%{version}.tar.gz
