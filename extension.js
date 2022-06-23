@@ -315,8 +315,8 @@ class TopBar {
 
     Main.layoutManager.panelBox.add_effect(
       new Shell.BlurEffect({
-        brightness: 0.8,
-        sigma: 30,
+        brightness: 0.95,
+        sigma: 5,
         mode: 1,
       })
     );
