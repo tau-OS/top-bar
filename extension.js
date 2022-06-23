@@ -185,14 +185,6 @@ class TopBar {
     if (children.indexOf(dateMenu.container) != -1) {
       clock_alignment(CLOCK_RIGHT);
     }
-
-    Main.layoutManager.panelBox.add_effect(
-      new Shell.BlurEffect({
-        brightness: 0.95,
-        sigma: 5,
-        mode: 1,
-      })
-    );
   }
 
   disable() {
