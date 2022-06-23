@@ -15,7 +15,6 @@ install_dir = join_paths(get_option('datadir'), 'gnome-shell', 'extensions', app
 sources = [
     'metadata.json',
     'extension.js',
-    'stylesheet.css',
 ]
 
 if get_option('prefix') == '/usr'
