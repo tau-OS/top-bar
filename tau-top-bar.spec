@@ -7,7 +7,7 @@ Version:        1
 Release:        1.2.8
 License:        GPLv3+
 URL:            http://tauos.co
-Source0:        %{name}-%{version}.tar.gz
+Source0:        https://github.com/tau-OS/top-bar/archive/refs/heads/main.zip
 BuildArch:      noarch
 BuildRequires:  meson
 BuildRequires:  %{_bindir}/glib-compile-schemas
@@ -19,7 +19,7 @@ This extension enhances the top bar moving the clock to the right, and making
 the bar intelligent about its surroundings and becoming opaque if needed.
 
 %prep
-%setup -q
+%setup -q -n top-bar-main
 
 %build
 %meson
